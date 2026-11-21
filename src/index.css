@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-cream: #FAF7F2;
+  --color-cream-deep: #F3ECE2;
+  --color-espresso: #291D16;
+  --color-cocoa: #6B574A;
+  --color-caramel: #B45309;
+  --color-caramel-bright: #D97706;
+  --color-line: #E8DFD3;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: #FAF7F2;
+    color: #291D16;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom subtle warm scrollbar for Kanban horizontal scrolling */
+.kanban-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 6px;
+}
+
+.kanban-scroll::-webkit-scrollbar-track {
+  background: #F3ECE2;
+  border-radius: 9999px;
+}
+
+.kanban-scroll::-webkit-scrollbar-thumb {
+  background: #D6C7B4;
+  border-radius: 9999px;
+}
+
+.kanban-scroll::-webkit-scrollbar-thumb:hover {
+  background: #B8A48E;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "PudimFlow",
+  "description": "SaaS multi-tenant para pudimerias e confeitarias artesanais com Kanban de cozinha, gestão de margem e estoque, cardápio público mobile-first e agente de atendimento por IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
