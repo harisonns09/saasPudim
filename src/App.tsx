@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ToastContainer } from './components/ToastContainer';
 import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { OrdersKanbanPage } from './pages/OrdersKanbanPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -16,6 +17,7 @@ function AppRouter() {
     if (publicStoreMatch) return;
 
     const isAdminPrivateRoute =
+      currentPath === '/admin/dashboard' ||
       currentPath === '/admin/pedidos' ||
       currentPath === '/admin/produtos' ||
       currentPath === '/admin/configuracoes';
@@ -26,7 +28,7 @@ function AppRouter() {
     }
 
     if (currentPath === '/admin/login' && session) {
-      navigate('/admin/pedidos', true);
+      navigate('/admin/dashboard', true);
       return;
     }
 
@@ -35,7 +37,7 @@ function AppRouter() {
       currentPath !== '/admin/login' &&
       !publicStoreMatch
     ) {
-      navigate(session ? '/admin/pedidos' : '/admin/login', true);
+      navigate(session ? '/admin/dashboard' : '/admin/login', true);
     }
   }, [currentPath, session, navigate, publicStoreMatch]);
 
@@ -48,6 +50,10 @@ function AppRouter() {
     return <LoginPage />;
   }
 
+  if (currentPath === '/admin/pedidos') {
+    return <OrdersKanbanPage />;
+  }
+
   if (currentPath === '/admin/produtos') {
     return <ProductsPage />;
   }
@@ -56,7 +62,7 @@ function AppRouter() {
     return <SettingsPage />;
   }
 
-  return <OrdersKanbanPage />;
+  return <DashboardPage />;
 }
 
 export default function App() {

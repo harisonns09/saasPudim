@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  LayoutDashboard,
   ChefHat,
   Package,
   Sparkles,
@@ -11,9 +12,11 @@ import {
   Radio,
   Database,
   Server,
+  Bell,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { API_BASE_URL } from '../services/api';
+import { KitchenAlertsMenu } from './KitchenAlertsMenu';
 
 interface AdminLayoutProps {
   title: string;
@@ -65,7 +68,7 @@ export function AdminLayout({
   title,
   sectionLabel,
   topBarAction,
-  isLiveConnected = true,
+  isLiveConnected,
   children,
 }: AdminLayoutProps) {
   const {
@@ -77,10 +80,35 @@ export function AdminLayout({
     storeName,
     isDemoMode,
     toggleDemoMode,
+    notificationPermission,
+    toggleBrowserNotifications,
+    isLiveConnected: contextLiveConnected,
   } = useApp();
+  const effectiveLiveConnected = isLiveConnected ?? contextLiveConnected;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifBannerDismissed, setNotifBannerDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('pudimflow_notif_banner_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissNotifBanner = () => {
+    setNotifBannerDismissed(true);
+    try {
+      localStorage.setItem('pudimflow_notif_banner_dismissed', 'true');
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
   const navItems = [
+    {
+      label: 'Dashboard',
+      path: '/admin/dashboard',
+      icon: LayoutDashboard,
+    },
     {
       label: 'Pedidos (Cozinha)',
       path: '/admin/pedidos',
@@ -109,7 +137,7 @@ export function AdminLayout({
         <div className="flex items-center justify-between border-b border-[#EAE1D5] px-5 py-4">
           <button
             type="button"
-            onClick={() => handleNavClick('/admin/pedidos')}
+            onClick={() => handleNavClick('/admin/dashboard')}
             className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B45309] rounded-md"
           >
             <BrandMark />
@@ -267,9 +295,9 @@ export function AdminLayout({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3.5">
             <div
-              className="hidden items-center gap-2 text-xs font-medium sm:flex"
+              className="hidden items-center gap-2 text-xs font-medium xl:flex"
               title={
                 isDemoMode
                   ? 'Fluxo em tempo real pronto (SSE /api/pedidos/stream em produção)'
@@ -278,21 +306,54 @@ export function AdminLayout({
             >
               <Radio
                 className={`h-3.5 w-3.5 ${
-                  isLiveConnected ? 'text-emerald-700' : 'text-amber-700'
+                  effectiveLiveConnected ? 'text-emerald-700' : 'text-amber-700'
                 }`}
               />
               <span
                 className={`whitespace-nowrap ${
-                  isLiveConnected ? 'text-emerald-800' : 'text-amber-800'
+                  effectiveLiveConnected ? 'text-emerald-800' : 'text-amber-800'
                 }`}
               >
-                {isLiveConnected ? 'Ao vivo - Cozinha' : 'Reconectando - Cozinha'}
+                {effectiveLiveConnected ? 'Ao vivo - Cozinha' : 'Reconectando - Cozinha'}
               </span>
             </div>
+
+            <KitchenAlertsMenu />
 
             {topBarAction}
           </div>
         </header>
+
+        {notificationPermission === 'default' && !notifBannerDismissed && (
+          <div className="border-b border-[#EADBC8] bg-[#FDF7EE] px-4 py-2.5 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-[#4C3B31]">
+                <Bell className="h-3.5 w-3.5 shrink-0 text-[#B45309]" />
+                <span>
+                  Ative as notificações do navegador para alertar a cozinha quando
+                  chegarem pedidos do Cardápio Público ou WhatsApp IA.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void toggleBrowserNotifications()}
+                  className="rounded-md bg-[#B45309] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#92400E] whitespace-nowrap"
+                >
+                  Ativar alertas
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissNotifBanner}
+                  aria-label="Dispensar aviso de notificações"
+                  className="rounded-md p-1 text-[#7A6658] hover:bg-[#F3E8D8] hover:text-[#291D16]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">{children}</main>
       </div>

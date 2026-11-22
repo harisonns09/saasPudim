@@ -16,10 +16,13 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
+import { ExportMenuButton } from '../components/ExportMenuButton';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { DeliveryType, Order, OrderOrigin, OrderStatus } from '../types';
 import { formatCurrency, formatWeight } from '../utils/format';
+import { exportOrdersCsv, exportOrdersPdf } from '../utils/exportData';
+import { subscribeNewOrderEvents } from '../utils/kitchenNotifications';
 
 interface ColumnDefinition {
   status: OrderStatus;
@@ -107,13 +110,12 @@ function OriginTag({ origin }: { origin: OrderOrigin }) {
 }
 
 export function OrdersKanbanPage() {
-  const { isDemoMode, pushToast } = useApp();
+  const { isDemoMode, storeName, pushToast } = useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [isLiveConnected, setIsLiveConnected] = useState(true);
   const [originFilter, setOriginFilter] = useState<'ALL' | OrderOrigin>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -140,22 +142,13 @@ export function OrdersKanbanPage() {
   }, [loadOrders, isDemoMode]);
 
   useEffect(() => {
-    const unsubscribe = api.subscribeOrdersStream(
-      (incomingOrder) => {
-        setOrders((prev) => {
-          if (prev.some((o) => o.id === incomingOrder.id)) return prev;
-          return [incomingOrder, ...prev];
-        });
-        pushToast({
-          title: `Novo pedido ${incomingOrder.codigo}`,
-          description: `${incomingOrder.clienteNome} — ${formatCurrency(incomingOrder.valorTotal)}`,
-          tone: 'success',
-        });
-      },
-      (connected) => setIsLiveConnected(connected)
-    );
-    return unsubscribe;
-  }, [isDemoMode, pushToast]);
+    return subscribeNewOrderEvents((incomingOrder) => {
+      setOrders((prev) => {
+        if (prev.some((o) => o.id === incomingOrder.id)) return prev;
+        return [incomingOrder, ...prev];
+      });
+    });
+  }, []);
 
   const handleSimulateWhatsAppOrder = async () => {
     setSimulating(true);
@@ -228,11 +221,28 @@ export function OrdersKanbanPage() {
     return { totalRevenue, inKitchen, whatsappIaCount, pendingCount };
   }, [orders]);
 
+  const handleExportCsv = () => {
+    const filename = exportOrdersCsv(filteredOrders, storeName);
+    pushToast({
+      title: 'CSV de pedidos exportado',
+      description: `Arquivo ${filename} baixado com ${filteredOrders.length} registro(s).`,
+      tone: 'success',
+    });
+  };
+
+  const handleExportPdf = () => {
+    const filename = exportOrdersPdf(filteredOrders, storeName);
+    pushToast({
+      title: 'Relatório PDF de pedidos gerado',
+      description: `Arquivo ${filename} pronto para arquivamento contábil.`,
+      tone: 'success',
+    });
+  };
+
   return (
     <AdminLayout
       title="Kanban de Pedidos da Cozinha"
       sectionLabel="Pedidos (Cozinha)"
-      isLiveConnected={isLiveConnected}
       topBarAction={
         <button
           type="button"
@@ -291,26 +301,36 @@ export function OrdersKanbanPage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#E6DCD0] bg-[#F4EEE6] p-1">
-          {[
-            { value: 'ALL' as const, label: 'Todos' },
-            { value: OrderOrigin.WHATSAPP_IA, label: 'WhatsApp IA' },
-            { value: OrderOrigin.CARDAPIO_WEB, label: 'Cardápio Web' },
-            { value: OrderOrigin.MANUAL, label: 'Manual' },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setOriginFilter(tab.value)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                originFilter === tab.value
-                  ? 'bg-white text-[#291D16] shadow-xs'
-                  : 'text-[#6B574A] hover:text-[#291D16]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#E6DCD0] bg-[#F4EEE6] p-1">
+            {[
+              { value: 'ALL' as const, label: 'Todos' },
+              { value: OrderOrigin.WHATSAPP_IA, label: 'WhatsApp IA' },
+              { value: OrderOrigin.CARDAPIO_WEB, label: 'Cardápio Web' },
+              { value: OrderOrigin.MANUAL, label: 'Manual' },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setOriginFilter(tab.value)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  originFilter === tab.value
+                    ? 'bg-white text-[#291D16] shadow-xs'
+                    : 'text-[#6B574A] hover:text-[#291D16]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <ExportMenuButton
+            recordCount={filteredOrders.length}
+            recordLabel={filteredOrders.length === 1 ? 'pedido' : 'pedidos'}
+            onExportCsv={handleExportCsv}
+            onExportPdf={handleExportPdf}
+            disabled={loading}
+          />
         </div>
       </div>
 

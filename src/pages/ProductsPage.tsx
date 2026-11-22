@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { AdminLayout } from '../components/AdminLayout';
+import { ExportMenuButton } from '../components/ExportMenuButton';
 import { ResilientImage } from '../components/ResilientImage';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
@@ -21,6 +22,7 @@ import {
   formatCurrency,
   formatWeight,
 } from '../utils/format';
+import { exportProductsCsv, exportProductsPdf } from '../utils/exportData';
 
 interface ProductFormState {
   id?: string;
@@ -55,7 +57,7 @@ const EMPTY_FORM: ProductFormState = {
 };
 
 export function ProductsPage() {
-  const { isDemoMode, pushToast } = useApp();
+  const { isDemoMode, storeName, pushToast } = useApp();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,6 +253,24 @@ export function ProductsPage() {
   const formPreviewMargin = calculateProfitMargin(formPreviewPrice, formPreviewCost);
   const formPreviewProfit = formPreviewPrice - formPreviewCost;
 
+  const handleExportCsv = () => {
+    const filename = exportProductsCsv(filteredProducts, storeName);
+    pushToast({
+      title: 'CSV de produtos e estoque exportado',
+      description: `Arquivo ${filename} baixado com ${filteredProducts.length} sabor(es).`,
+      tone: 'success',
+    });
+  };
+
+  const handleExportPdf = () => {
+    const filename = exportProductsPdf(filteredProducts, storeName);
+    pushToast({
+      title: 'Relatório PDF de estoque gerado',
+      description: `Arquivo ${filename} pronto para conferência e arquivo.`,
+      tone: 'success',
+    });
+  };
+
   return (
     <AdminLayout
       title="Produtos & Estoque"
@@ -314,25 +334,35 @@ export function ProductsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-[#E6DCD0] bg-[#F4EEE6] p-1">
-          {[
-            { id: 'ALL' as const, label: 'Todos' },
-            { id: 'ACTIVE' as const, label: 'Ativos' },
-            { id: 'LOW' as const, label: 'Estoque baixo (<3)' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setStockFilter(tab.id)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                stockFilter === tab.id
-                  ? 'bg-white text-[#291D16] shadow-xs'
-                  : 'text-[#6B574A] hover:text-[#291D16]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1 rounded-lg border border-[#E6DCD0] bg-[#F4EEE6] p-1">
+            {[
+              { id: 'ALL' as const, label: 'Todos' },
+              { id: 'ACTIVE' as const, label: 'Ativos' },
+              { id: 'LOW' as const, label: 'Estoque baixo (<3)' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStockFilter(tab.id)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  stockFilter === tab.id
+                    ? 'bg-white text-[#291D16] shadow-xs'
+                    : 'text-[#6B574A] hover:text-[#291D16]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <ExportMenuButton
+            recordCount={filteredProducts.length}
+            recordLabel={filteredProducts.length === 1 ? 'sabor' : 'sabores'}
+            onExportCsv={handleExportCsv}
+            onExportPdf={handleExportPdf}
+            disabled={loading}
+          />
         </div>
       </div>
 

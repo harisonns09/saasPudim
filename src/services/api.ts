@@ -16,6 +16,7 @@ import {
   INITIAL_STORE_CONFIG,
   WHATSAPP_SIMULATION_TEMPLATES,
 } from './mockData';
+import { broadcastNewOrder } from '../utils/kitchenNotifications';
 
 const STORAGE_KEYS = {
   TOKEN: 'pudimflow_token',
@@ -269,6 +270,7 @@ export const api = {
       },
     };
     saveDemoConfig(updatedConfig);
+    broadcastNewOrder(newOrder);
 
     return newOrder;
   },
@@ -297,6 +299,7 @@ export const api = {
     eventSource.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data) as Order;
+        broadcastNewOrder(parsed);
         onNewOrder(parsed);
       } catch {
         // Ignore malformed heartbeat payloads
@@ -525,13 +528,19 @@ export const api = {
 
       saveDemoProducts(updatedProducts);
       saveDemoOrders([createdOrder, ...orders]);
+      broadcastNewOrder(createdOrder);
       return createdOrder;
     }
 
-    return apiRequest<Order>(`/loja/${encodeURIComponent(slug)}/pedidos`, {
-      method: 'POST',
-      tenantSlug: slug,
-      body: JSON.stringify(payload),
-    });
+    const created = await apiRequest<Order>(
+      `/loja/${encodeURIComponent(slug)}/pedidos`,
+      {
+        method: 'POST',
+        tenantSlug: slug,
+        body: JSON.stringify(payload),
+      }
+    );
+    broadcastNewOrder(created);
+    return created;
   },
 };

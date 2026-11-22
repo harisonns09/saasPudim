@@ -189,7 +189,7 @@ export function PublicMenuPage({ slug }: PublicMenuPageProps) {
         <div className="flex items-center justify-between border-b border-[#EAE1D5] bg-white px-4 py-2.5 text-xs">
           <button
             type="button"
-            onClick={() => navigate(session ? '/admin/pedidos' : '/admin/login')}
+            onClick={() => navigate(session ? '/admin/dashboard' : '/admin/login')}
             className="inline-flex items-center gap-1.5 font-semibold text-[#5C4A3E] transition-colors hover:text-[#B45309]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -288,7 +288,7 @@ export function PublicMenuPage({ slug }: PublicMenuPageProps) {
                   type="button"
                   onClick={() => {
                     if (!session && isDemoMode) {
-                      void loginDemo();
+                      void loginDemo('/admin/pedidos');
                     } else {
                       navigate('/admin/pedidos');
                     }
